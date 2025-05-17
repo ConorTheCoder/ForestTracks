@@ -1,7 +1,12 @@
 import json
 import os
 import argparse
-from datetime import datetime
+import time
+from datetime import datetime, date, time as dtime, timedelta
+from typing import Tuple
+import urllib.request
+import urllib.error
+
 
 DATA_FILE = 'forest_data.json'
 
@@ -36,6 +41,37 @@ def total_hours(friend):
     return sum(friend_data.values())
 
 
+def fetch_forest_hours(profile_url: str) -> Tuple[str, float]:
+    """Fetch today's hours from a Forest profile URL.
+
+    This function assumes the URL returns JSON with ``date`` and ``hours``
+    fields for the current day. If the API differs, adjust the parsing logic
+    accordingly.
+    """
+    try:
+        with urllib.request.urlopen(profile_url, timeout=10) as resp:
+            body = resp.read()
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f'Failed to fetch profile data: {exc}') from exc
+
+    data = json.loads(body.decode())
+    return data["date"], float(data["hours"])
+
+
+def track_daily(friend: str, profile_url: str) -> None:
+    """Continuously record a friend's hours each day at 23:59."""
+    while True:
+        now = datetime.now()
+        target = datetime.combine(now.date(), dtime(23, 59))
+        if now >= target:
+            target += timedelta(days=1)
+        time.sleep((target - now).total_seconds())
+
+        date_str, hours = fetch_forest_hours(profile_url)
+        add_hours(friend, date_str, hours)
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Track daily Forest study hours for a friend.')
     subparsers = parser.add_subparsers(dest='command')
@@ -50,6 +86,10 @@ def parse_args():
 
     total_parser = subparsers.add_parser('total', help='Show total hours.')
     total_parser.add_argument('friend')
+
+    track_parser = subparsers.add_parser('track', help='Auto record daily hours.')
+    track_parser.add_argument('friend')
+    track_parser.add_argument('profile_url', help='URL returning today\'s hours')
 
     return parser.parse_args()
 
@@ -69,6 +109,11 @@ def main():
             print(f'{date}: {hours}')
     elif args.command == 'total':
         print(total_hours(args.friend))
+
+    elif args.command == 'track':
+        print(f'Tracking {args.friend}... press Ctrl+C to stop')
+        track_daily(args.friend, args.profile_url)
+
     else:
         print('No command specified')
         raise SystemExit(1)
