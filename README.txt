@@ -26,6 +26,17 @@ Show the total number of hours recorded for a friend:
 python3 forest_tracker.py total <friend>
 ```
 
+Track a friend's hours automatically each day at 23:59:
+
+```
+python3 forest_tracker.py track <friend> <profile_url>
+```
+
+The `track` command stores the friend's profile URL in `forest_data.json` and
+uses it to fetch the latest daily hours. Tracking uses the `requests` and
+`schedule` libraries, so ensure they are installed. **Always obtain your
+friend's consent before enabling tracking.**
+
 Running Tests
 -------------
 
