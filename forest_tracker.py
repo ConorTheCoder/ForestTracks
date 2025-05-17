@@ -7,6 +7,7 @@ from typing import Tuple
 import urllib.request
 import urllib.error
 
+
 DATA_FILE = 'forest_data.json'
 
 
@@ -70,6 +71,7 @@ def track_daily(friend: str, profile_url: str) -> None:
         add_hours(friend, date_str, hours)
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Track daily Forest study hours for a friend.')
     subparsers = parser.add_subparsers(dest='command')
@@ -107,9 +109,11 @@ def main():
             print(f'{date}: {hours}')
     elif args.command == 'total':
         print(total_hours(args.friend))
+
     elif args.command == 'track':
         print(f'Tracking {args.friend}... press Ctrl+C to stop')
         track_daily(args.friend, args.profile_url)
+
     else:
         print('No command specified')
         raise SystemExit(1)
